@@ -7,6 +7,15 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
         return tempnam($tempDir, "phpunit");
     }
 
+    private static function getSquidLogWithContents($logLine) {
+        $logFileName = self::getTempLogFileName();
+        file_put_contents($logFileName, $logLine);
+
+        $mySquidLog = new squidLog($logFileName);
+        unlink($logFileName);
+
+        return $mySquidLog;
+    }
 
     public function logLineProvider() {
         return array (
@@ -29,6 +38,13 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
                 '- NONE/- application/octet-stream',
                 true,
                 true,
+            ),
+            array (
+                '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+                'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+                '- DIRECT/- application/octet-stream',
+                true,
+                false,
             )
         );
     }
@@ -37,11 +53,7 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
      * @dataProvider logLineProvider
      */
     public function testIsWindowsUpdateLogLine($logLine, $isWindowsUpdate, $isHit) {
-        $logFileName = self::getTempLogFileName();
-        file_put_contents($logFileName, $logLine);
-
-        $mySquidLog = new squidLog($logFileName);
-        unlink($logFileName);
+        $mySquidLog = self::getSquidLogWithContents($logLine);
 
         $expectedEntryCount = ($isWindowsUpdate)?(1):(0);
 
@@ -50,6 +62,23 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
         $entryCount += count($mySquidLog->getMissEntries());
 
         $this->assertEquals($expectedEntryCount, $entryCount);
+    }
+
+    /**
+     * @dataProvider logLineProvider
+     */
+    public function testHitSeparation($logLine, $isWindowsUpdate, $isHit) {
+        $mySquidLog = self::getSquidLogWithContents($logLine);
+
+        if($isWindowsUpdate) {
+            if($isHit) {
+                $this->assertEquals(1, count($mySquidLog->getHitEntries()));
+                $this->assertEquals(0, count($mySquidLog->getMissEntries()));
+            } else {
+                $this->assertEquals(0, count($mySquidLog->getHitEntries()));
+                $this->assertEquals(1, count($mySquidLog->getMissEntries()));
+            }
+        }
     }
 }
 
