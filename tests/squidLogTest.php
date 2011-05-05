@@ -80,6 +80,22 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
             }
         }
     }
+
+    public function testLogLineParsing() {
+        $mySquidLog = self::getSquidLogWithContents (
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- DIRECT/- application/octet-stream'
+        );
+
+        $missEntries = $mySquidLog->getMissEntries();
+        $entry = $missEntries[0];
+
+        $this->assertEquals('1304537726.077',         $entry->timestamp);
+        $this->assertEquals('2',                      $entry->elapsed);
+        $this->assertEquals('192.168.1.125',          $entry->client);
+        $this->assertEquals('TCP_REFRESH_UNMODIFIED', $entry->action);
+    }
 }
 
 ?>
