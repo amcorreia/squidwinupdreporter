@@ -67,7 +67,7 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
     /**
      * @dataProvider logLineProvider
      */
-    public function testHitSeparation($logLine, $isWindowsUpdate, $isHit) {
+    public function testAddLogLineHitSeparation($logLine, $isWindowsUpdate, $isHit) {
         $mySquidLog = self::getSquidLogWithContents($logLine);
 
         if($isWindowsUpdate) {
