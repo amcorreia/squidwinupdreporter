@@ -83,6 +83,27 @@ class squidLog {
     public function getMissEntries() {
         return $this->missEntries;
     }
+
+    /**
+     * Does this log contain an request for the specified url?
+     * @param string $url The url to check for
+     * @return int <0, 0, or >0 if it was a missed request, was not requested, or was a hit request respectivly
+     */
+    public function hasURLRequest($url) {
+        foreach($this->missEntries as $entry) {
+            if($entry->url === $url) {
+                return -1;
+            }
+        }
+
+        foreach($this->hitEntries as $entry) {
+            if($entry->url === $url) {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
 }
 
 ?>
