@@ -11,8 +11,8 @@ $windowsUpdatePatterns[] = 'www.microsoft.com/.*\.(cab|exe|dll|msi|psf)\s';
 $windowsUpdatePatterns[] = 'au.download.windowsupdate.com/.*\.(cab|exe|dll|msi|psf)\s';
 
 class squidLog {
-    private $hitEntries;
-    private $missEntries;
+    private $hitEntries = array();
+    private $missEntries = array();
 
     public function __construct($logFileName) {
         if((($logFile = fopen(strval($logFileName), "r"))) === false) {
