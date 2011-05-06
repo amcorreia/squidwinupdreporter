@@ -104,6 +104,40 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('application/octet-stream', $entry->content);
         $this->assertEquals('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab', $entry->url);
     }
+
+    public function testHasURLRequestForMissRequest() {
+        $mySquidLog = self::getSquidLogWithContents (
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- DIRECT/- application/octet-stream'
+        );
+
+        $this->assertTrue (
+            $mySquidLog->hasURLRequest('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab') < 0
+        );
+    }
+
+    public function testHasURLRequestForNonExistentEntry() {
+        $mySquidLog = self::getSquidLogWithContents (
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- DIRECT/- application/octet-stream'
+        );
+
+        $this->assertTrue($mySquidLog->hasURLRequest('http://www.download.windowsupdate.com/msdownload/update/v3/') === 0);
+    }
+
+    public function testHasURLRequestForHitRequest() {
+        $mySquidLog = self::getSquidLogWithContents (
+            '1304537726.077      2 192.168.1.125 TCP_HIT/200 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- NONE/- application/octet-stream'
+        );
+
+        $this->assertTrue (
+            $mySquidLog->hasURLRequest('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab') > 0
+        );
+    }
 }
 
 ?>
