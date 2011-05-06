@@ -65,6 +65,7 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
     }
 
     /**
+     * This by nature also tests getHitEntries() and getMissEntries()
      * @dataProvider logLineProvider
      */
     public function testAddLogLineHitSeparation($logLine, $isWindowsUpdate, $isHit) {
