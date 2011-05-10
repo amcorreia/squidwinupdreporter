@@ -11,8 +11,7 @@ $windowsUpdatePatterns[] = 'www.microsoft.com/.*\.(cab|exe|dll|msi|psf)\s';
 $windowsUpdatePatterns[] = 'au.download.windowsupdate.com/.*\.(cab|exe|dll|msi|psf)\s';
 
 class squidLog {
-    private $hitEntries = array();
-    private $missEntries = array();
+    private $entries = array();
 
     public function __construct($logFileName) {
         if((($logFile = fopen(strval($logFileName), "r"))) === false) {
@@ -42,7 +41,7 @@ class squidLog {
         }
     }
 
-    private function addLogEntry($logLine) {
+    private function parseLogEntry($logLine) {
         if (
             preg_match (
                 '/([\d\.]+)(\s+)(\d+)(\s+)(((\d{1,3}\.){3})(\d{1,3}))' .
@@ -67,42 +66,53 @@ class squidLog {
                 "content"      => $pieces[29],
             );
 
-            //not finished
-            if($entry["hier"] == "NONE") {
-                $this->hitEntries[] = new squidLogEntry($entry);
-            } else {
-                $this->missEntries[] = new squidLogEntry($entry);
-            }
+            return new squidLogEntry($entry);
+        } else {
+            return null;
         }
     }
 
-    public function getHitEntries() {
-        return $this->hitEntries;
+    private function addLogEntry($logLine) {
+        $newLogEntry = $this->parseLogEntry($logLine);
+
+        if(is_null($newLogEntry)) {
+            return;
+        }
+
+        $existingEntry = &$this->getEntryWithURL($newLogEntry->url);
+
+        if(is_null($existingEntry)) {
+            $this->addNewLogEntry($newLogEntry);
+        } else {
+            $this->mergeExistingLogEntry($newLogEntry, $existingEntry);
+        }
     }
 
-    public function getMissEntries() {
-        return $this->missEntries;
+    private function addNewLogEntry($entry) {
+        $this->entries[] = $entry;
+    }
+
+    private function mergeExistingLogEntry($newEntry, &$existingEntry) {
+        $existingEntry = clone $newEntry;
+    }
+
+    public function getEntries() {
+        return $this->entries;
     }
 
     /**
-     * Does this log contain an request for the specified url?
+     * Return the squid log entry that has the specified url if there is one
      * @param string $url The url to check for
-     * @return int <0, 0, or >0 if it was a missed request, was not requested, or was a hit request respectivly
+     * @return &squidLogEntry|NULL The squid log entry with the specified URL or NULL there isn't one
      */
-    public function hasURLRequest($url) {
-        foreach($this->missEntries as $entry) {
+    public function getEntryWithURL($url) {
+        foreach($this->entries as $entry) {
             if($entry->url === $url) {
-                return -1;
+                return $entry;
             }
         }
 
-        foreach($this->hitEntries as $entry) {
-            if($entry->url === $url) {
-                return 1;
-            }
-        }
-
-        return 0;
+        return NULL;
     }
 }
 

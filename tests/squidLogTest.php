@@ -57,29 +57,8 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
 
         $expectedEntryCount = ($isWindowsUpdate)?(1):(0);
 
-        // we don't care whether it was a hit or miss for this test
-        $entryCount  = count($mySquidLog->getHitEntries());
-        $entryCount += count($mySquidLog->getMissEntries());
-
+        $entryCount = count($mySquidLog->getEntries());
         $this->assertEquals($expectedEntryCount, $entryCount);
-    }
-
-    /**
-     * This by nature also tests getHitEntries() and getMissEntries()
-     * @dataProvider logLineProvider
-     */
-    public function testAddLogLineHitSeparation($logLine, $isWindowsUpdate, $isHit) {
-        $mySquidLog = self::getSquidLogWithContents($logLine);
-
-        if($isWindowsUpdate) {
-            if($isHit) {
-                $this->assertEquals(1, count($mySquidLog->getHitEntries()));
-                $this->assertEquals(0, count($mySquidLog->getMissEntries()));
-            } else {
-                $this->assertEquals(0, count($mySquidLog->getHitEntries()));
-                $this->assertEquals(1, count($mySquidLog->getMissEntries()));
-            }
-        }
     }
 
     public function testAddLogLineParsing() {
@@ -89,8 +68,8 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
             '- DIRECT/- application/octet-stream'
         );
 
-        $missEntries = $mySquidLog->getMissEntries();
-        $entry = $missEntries[0];
+        $entries = $mySquidLog->getEntries();
+        $entry = $entries[0];
 
         $this->assertEquals('1304537726.077',           $entry->timestamp);
         $this->assertEquals('2',                        $entry->elapsed);
@@ -105,38 +84,68 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab', $entry->url);
     }
 
-    public function testHasURLRequestForMissRequest() {
+    public function testAddLogLineNonDuplicateURLs() {
+        $mySquidLog = self::getSquidLogWithContents (
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- DIRECT/- application/octet-stream' .
+            "\n" .
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v4/static/trustedr/en/othercab.exe '.
+            '- DIRECT/- application/octet-stream'
+        );
+
+        $entries = $mySquidLog->getEntries();
+        $this->assertEquals(2, count($entries));
+        $this->assertNotEquals($entries[0]->url, $entries[1]->url);
+    }
+
+    public function testAddLogLineDuplicateURLs() {
+        $mySquidLog = self::getSquidLogWithContents (
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- DIRECT/- application/octet-stream' .
+            "\n" .
+            '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
+            'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+            '- NONE/- application/octet-stream'
+        );
+
+        $entries = $mySquidLog->getEntries();
+        $this->assertEquals(1, count($entries));
+        $this->assertTrue($entries[0]->isHit());
+    }
+
+    public function testGetEntryWithURLForMissRequest() {
         $mySquidLog = self::getSquidLogWithContents (
             '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
             'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
             '- DIRECT/- application/octet-stream'
         );
 
-        $this->assertTrue (
-            $mySquidLog->hasURLRequest('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab') < 0
-        );
+        $entry = $mySquidLog->getEntryWithURL('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab');
+        $this->assertFalse($entry->isHit());
     }
 
-    public function testHasURLRequestForNonExistentEntry() {
+    public function testGetEntryWithURLForNonExistentEntry() {
         $mySquidLog = self::getSquidLogWithContents (
             '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
             'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
             '- DIRECT/- application/octet-stream'
         );
 
-        $this->assertTrue($mySquidLog->hasURLRequest('http://www.download.windowsupdate.com/msdownload/update/v3/') === 0);
+        $this->assertNull($mySquidLog->getEntryWithURL('http://www.download.windowsupdate.com/msdownload/update/v3/'));
     }
 
-    public function testHasURLRequestForHitRequest() {
+    public function testGetEntryWithURLForHitRequest() {
         $mySquidLog = self::getSquidLogWithContents (
             '1304537726.077      2 192.168.1.125 TCP_HIT/200 45011 GET ' .
             'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
             '- NONE/- application/octet-stream'
         );
 
-        $this->assertTrue (
-            $mySquidLog->hasURLRequest('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab') > 0
-        );
+        $entry = $mySquidLog->getEntryWithURL('http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab');
+        $this->assertTrue($entry->isHit());
     }
 }
 
