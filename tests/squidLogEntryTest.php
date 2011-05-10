@@ -44,11 +44,24 @@ class squidLogEntryTest extends PHPUnit_Framework_TestCase {
          $this->assertEquals("test", $mySquidLogEntry->$property);
     }
 
-    public function testSetProperty() {
+    /**
+     * @dataProvider badPropertyProvider
+     */
+    public function testSetBadProperty($property) {
         $mySquidLogEntry = new squidLogEntry(array("client" => "test"));
 
         $this->setExpectedException("RuntimeException");
-        $mySquidLogEntry->from = "test";
+        $mySquidLogEntry->$property = "test";
+    }
+
+    /**
+     * @dataProvider goodPropertyProvider
+     */
+    public function testSetGoodProperty($property) {
+        $mySquidLogEntry = new squidLogEntry(array("client" => "test"));
+
+        $mySquidLogEntry->$property = "test2";
+        $this->assertEquals($mySquidLogEntry->$property, "test2");
     }
 
     /**
@@ -69,6 +82,15 @@ class squidLogEntryTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals("", $mySquidLogEntry->$property);
     }
 
+    public function testIsHitForHit() {
+        $mySquidLogEntry = new squidLogEntry(array("hier" => "NONE"));
+        $this->assertTrue($mySquidLogEntry->isHit());
+    }
+
+    public function testIsHitforMiss() {
+        $mySquidLogEntry = new squidLogEntry(array("hier" => "DIRECT"));
+        $this->assertFalse($mySquidLogEntry->isHit());
+    }
 }
 
 ?>

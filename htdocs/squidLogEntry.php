@@ -26,8 +26,12 @@ class squidLogEntry {
         }
     }
 
-    public function __set($property, $value) {
-        throw(new RuntimeException("Attempting to change a property of " . __CLASS__ .  " which is immutable"));
+    public function __set($name, $value) {
+        if($this->isValidProperty($name)) {
+            $this->properties[$name] = $value;
+        } else {
+            throw(new RuntimeException("Attempting to modify an unknown property of " . __CLASS__ . ": $name"));
+        }
     }
 
     public function __get($name) {
@@ -40,6 +44,14 @@ class squidLogEntry {
 
     private function isValidProperty($property) {
         if(array_key_exists($property, $this->properties)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function isHit() {
+        if($this->properties["hier"] == "NONE") {
             return true;
         } else {
             return false;
