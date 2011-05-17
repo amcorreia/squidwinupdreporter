@@ -79,21 +79,11 @@ class squidLog {
             return;
         }
 
-        $existingEntry = &$this->getEntryWithURL($newLogEntry->url);
-
-        if(is_null($existingEntry)) {
-            $this->addNewLogEntry($newLogEntry);
+        if(($existingEntryIndex = $this->getEntryIndexWithURL($newLogEntry->url)) === false) {
+            $this->entries[] = $newLogEntry;
         } else {
-            $this->mergeExistingLogEntry($newLogEntry, $existingEntry);
+            $this->entries[$existingEntryIndex] = $newLogEntry;
         }
-    }
-
-    private function addNewLogEntry($entry) {
-        $this->entries[] = $entry;
-    }
-
-    private function mergeExistingLogEntry($newEntry, &$existingEntry) {
-        $existingEntry = clone $newEntry;
     }
 
     public function getEntries() {
@@ -101,18 +91,31 @@ class squidLog {
     }
 
     /**
-     * Return the squid log entry that has the specified url if there is one
+     * Return the index of the squid log entry that has the specified url if there is one
      * @param string $url The url to check for
-     * @return &squidLogEntry|NULL The squid log entry with the specified URL or NULL there isn't one
+     * @return int|bool The index of the squid log entry with the specified URL or false there isn't one
      */
-    public function getEntryWithURL($url) {
-        foreach($this->entries as $entry) {
+    public function getEntryIndexWithURL($url) {
+        foreach($this->entries as $index => $entry) {
             if($entry->url === $url) {
-                return $entry;
+                return $index;
             }
         }
 
-        return NULL;
+        return false;
+    }
+
+    /**
+     * Return the squid log entry that has the specified url if there is one
+     * @param string $url The url to check for
+     * @return squidLogEntry|NULL The squid log entry with the specified URL or NULL there isn't one
+     */
+    public function getEntryWithURL($url) {
+        if(($entryIndex = $this->getEntryIndexWithURL($url)) !== false) {
+            return $this->entries[$entryIndex];
+        } else {
+            return null;
+        }
     }
 }
 
