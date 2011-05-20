@@ -1,4 +1,9 @@
 <?php
+/**
+ * @package squidWinUpdateReporter
+ * @author Matthew Morgan <lytithwyn@gmail.com>
+ */
+
 require_once("squidLogEntry.php");
 
 /**
@@ -10,9 +15,20 @@ $windowsUpdatePatterns[] = 'download.microsoft.com/.*\.(cab|exe|dll|msi|psf)\s';
 $windowsUpdatePatterns[] = 'www.microsoft.com/.*\.(cab|exe|dll|msi|psf)\s';
 $windowsUpdatePatterns[] = 'au.download.windowsupdate.com/.*\.(cab|exe|dll|msi|psf)\s';
 
+/**
+ * This class represents one squid log file.
+ * It give us the ability to see what windows updates were downloaded (with duplicate squashing),
+ * whether or not they were "hits" (using the last downloaded state for dupes), and gives us the
+ * ability to compare itself to another log to see if the same updates were hit/misses in each one.
+ */
 class squidLog {
     private $entries = array();
 
+    /**
+     * Construct a new squidLog given the name of the log file to load
+     * @param string $logFileName the file name of the squid log to use
+     * @throws RuntimeException
+     */
     public function __construct($logFileName) {
         if((($logFile = fopen(strval($logFileName), "r"))) === false) {
             throw(new RuntimeException("Could not open log file (" . strval($logFileName) . " for reading"));
@@ -27,6 +43,11 @@ class squidLog {
         fclose($logFile);
     }
 
+    /**
+     * Determine whether the given log line represents a windows update download
+     * @param string $logLine the log line to inspect
+     * @return bool true if this is a windows update line, false if not
+     */
     private function isWindowsUpdateLogLine($logLine) {
         global $windowsUpdatePatterns;
 
@@ -41,6 +62,11 @@ class squidLog {
         }
     }
 
+    /**
+     * Parse the given log line into a squidLogEntry object
+     * @param string $logLine the log line to parse
+     * @return squidLogLineEntry|NULL a new squidLogLineEntry object or NULL if the line couldn't be parsed
+     */
     private function parseLogEntry($logLine) {
         if (
             preg_match (
@@ -72,11 +98,16 @@ class squidLog {
         }
     }
 
+    /**
+     * Add a log line to our list of entries
+     * @param string $logLine the log file line to add
+     * @return bool true if adding the line was successful, false if we failed
+     */
     private function addLogEntry($logLine) {
         $newLogEntry = $this->parseLogEntry($logLine);
 
         if(is_null($newLogEntry)) {
-            return;
+            return false;
         }
 
         if(($existingEntryIndex = $this->getEntryIndexWithURL($newLogEntry->url)) === false) {
@@ -84,8 +115,14 @@ class squidLog {
         } else {
             $this->entries[$existingEntryIndex] = $newLogEntry;
         }
+
+        return true;
     }
 
+    /**
+     * Get the list of squidLogEntry objects
+     * @return array the array of squidLogEntries
+     */
     public function getEntries() {
         return $this->entries;
     }
