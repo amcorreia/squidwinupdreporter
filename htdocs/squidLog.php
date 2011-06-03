@@ -30,7 +30,7 @@ class squidLog {
      * @throws RuntimeException
      */
     public function __construct($logFileName) {
-        if((($logFile = fopen(strval($logFileName), "r"))) === false) {
+        if((($logFile = @fopen(strval($logFileName), "r"))) === false) {
             throw(new RuntimeException("Could not open log file (" . strval($logFileName) . " for reading"));
         }
 

@@ -49,6 +49,11 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
         );
     }
 
+    public function testConstructNonExistentLog() {
+        $this->setExpectedException("RuntimeException");
+        $mySquidLog = new squidLog("/usr/testlog.log");
+    }
+
     /**
      * @dataProvider logLineProvider
      */
