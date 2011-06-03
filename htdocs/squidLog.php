@@ -50,16 +50,18 @@ class squidLog {
      */
     private function isWindowsUpdateLogLine($logLine) {
         global $windowsUpdatePatterns;
+        $isWindowsUpdateLogLine = false;
 
         foreach($windowsUpdatePatterns as $pattern) {
             // this is taking the base pattern, escaping forward slashes,
             // and adding the leading and trailing forward slash
             if(preg_match("/" . addcslashes($pattern, "/") . "/", $logLine)) {
-                return true;
-            } else {
-                return false;
+                $isWindowsUpdateLogLine = true;
+                break;
             }
         }
+
+        return $isWindowsUpdateLogLine;
     }
 
     /**
