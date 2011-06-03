@@ -108,16 +108,17 @@ class squidLog {
      * @return bool true if adding the line was successful, false if we failed
      */
     private function addLogEntry($logLine) {
+        $success = false;
         $newLogEntry = $this->parseLogEntry($logLine);
 
-        if(is_null($newLogEntry)) {
-            return false;
-        }
+        if(!is_null($newLogEntry)) {
+            if(($existingEntryIndex = $this->getEntryIndexWithURL($newLogEntry->url)) === false) {
+                $this->entries[] = $newLogEntry;
+            } else {
+                $this->entries[$existingEntryIndex] = $newLogEntry;
+            }
 
-        if(($existingEntryIndex = $this->getEntryIndexWithURL($newLogEntry->url)) === false) {
-            $this->entries[] = $newLogEntry;
-        } else {
-            $this->entries[$existingEntryIndex] = $newLogEntry;
+            $success = true;
         }
 
         return true;
