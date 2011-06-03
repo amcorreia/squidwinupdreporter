@@ -70,6 +70,8 @@ class squidLog {
      * @return squidLogLineEntry|NULL a new squidLogLineEntry object or NULL if the line couldn't be parsed
      */
     private function parseLogEntry($logLine) {
+        $newLogEntry = NULL;
+
         if (
             preg_match (
                 '/([\d\.]+)(\s+)(\d+)(\s+)(((\d{1,3}\.){3})(\d{1,3}))' .
@@ -94,10 +96,10 @@ class squidLog {
                 "content"      => $pieces[29],
             );
 
-            return new squidLogEntry($entry);
-        } else {
-            return null;
+            $newLogEntry = new squidLogEntry($entry);
         }
+
+        return $newLogEntry;
     }
 
     /**
