@@ -41,7 +41,7 @@ class squidLogTest extends PHPUnit_Framework_TestCase {
             ),
             array (
                 '1304537726.077      2 192.168.1.125 TCP_REFRESH_UNMODIFIED/304 45011 GET ' .
-                'http://www.download.windowsupdate.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
+                'http://download.microsoft.com/msdownload/update/v3/static/trustedr/en/authrootstl.cab '.
                 '- DIRECT/- application/octet-stream',
                 true,
                 false,
